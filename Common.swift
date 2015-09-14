@@ -8,7 +8,7 @@
 
 import Foundation
 import Alamofire
-import AlamoImage
+//import AlamoImage
 
 /**
 
@@ -20,7 +20,7 @@ AlamoImage.imageCache = NSCache()
 public var imageCache: NSCache? = nil
 
 func setAssociatedObject(object: AnyObject!, key: UnsafePointer<Void>, value: AnyObject!) {
-    objc_setAssociatedObject(object, key, value, objc_AssociationPolicy(OBJC_ASSOCIATION_RETAIN))
+    objc_setAssociatedObject(object, key, value, .OBJC_ASSOCIATION_RETAIN)
 }
 
 func associatedObject(object: AnyObject!, key: UnsafePointer<Void>) -> AnyObject! {

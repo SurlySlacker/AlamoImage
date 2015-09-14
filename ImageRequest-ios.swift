@@ -19,12 +19,13 @@ extension Request {
     class func imageResponseSerializer() -> GenericResponseSerializer<UIImage> {
         return GenericResponseSerializer { request, response, data in
             if data == nil {
-                return (nil, nil)
+                let failureReason = "String could not be serialized because input data was nil."
+                let error = Error.errorWithCode(.StringSerializationFailed, failureReason: failureReason)
+                return Result.Failure(nil, error)
             }
 
             let image = UIImage(data: data!, scale: UIScreen.mainScreen().scale)
-
-            return (image, nil)
+            return Result.Success(image!)
         }
     }
 
@@ -35,8 +36,12 @@ extension Request {
     
     :returns: The request.
     */
-    public func responseImage(completionHandler: (NSURLRequest, NSHTTPURLResponse?, UIImage?, NSError?) -> Void) -> Self {
-        return response(responseSerializer: Request.imageResponseSerializer(), completionHandler:completionHandler)
+    public func responseImage(
+        completionHandler: (NSURLRequest?, NSHTTPURLResponse?, Result<UIImage>) -> Void)
+         -> Self
+    {
+        return response(responseSerializer: Request.imageResponseSerializer(),
+            completionHandler: completionHandler)
     }
 }
 
@@ -55,7 +60,7 @@ extension UIImage {
     */
     public static func requestImage(URLStringConv: URLStringConvertible,
         success: (NSURLRequest?, NSHTTPURLResponse?, UIImage?) -> Void,
-        failure: (NSURLRequest?, NSHTTPURLResponse?, NSError?) -> Void = { (_, _, _) in }
+        failure: (NSURLRequest?, NSHTTPURLResponse?, ErrorType?) -> Void = { (_, _, _) in }
         ) -> Request?
     {
         if let cachedImage = imageCache?.objectForKey(URLStringConv.URLString) as? UIImage {
@@ -64,12 +69,15 @@ extension UIImage {
         } else {
             return Alamofire.request(.GET, URLStringConv).validate().responseImage()
                 {
-                    (req, response, image, error) in
-                    if error == nil && image != nil {
-                        imageCache?.setObject(image!, forKey: URLStringConv.URLString)
+                    (req, response, result) in
+                    switch(result){
+                    case .Success(let image):
+                        imageCache?.setObject(image, forKey: URLStringConv.URLString)
                         success(req, response, image)
-                    } else {
+                        break
+                    case .Failure(_, let error):
                         failure(req, response, error)
+                        break
                     }
             }
         }
