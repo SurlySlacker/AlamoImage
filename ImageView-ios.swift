@@ -35,11 +35,11 @@ import Foundation
 
         */
         public func requestImage(URLStringConv: URLStringConvertible, placeholder: UIImage? = nil,
-            success _success: (UIImageView, NSURLRequest?, NSHTTPURLResponse?, UIImage?) -> Void = { (imageView, _, _, theImage) in
+            success _success: (UIImageView, UIImage?) -> Void = { (imageView, theImage) in
 
                 imageView.image = theImage
             },
-            failure _failure: (UIImageView, NSURLRequest?, NSHTTPURLResponse?, ErrorType?) -> Void = { (_, _, _, _) in }
+            failure _failure: (UIImageView, ErrorType?) -> Void = { (_, _) in }
             )
         {
             if (placeholder != nil) {
@@ -48,11 +48,11 @@ import Foundation
             self.request?.cancel()
 
             self.request = UIImage.requestImage(URLStringConv,
-                success: { (req, res, img) in
-                    _success(self, req, res, img)
+                success: { (img) in
+                    _success(self, img)
                 },
-                failure: { (req, res, err) in
-                    _failure(self, req, res, err)
+                failure: { (err) in
+                    _failure(self, err)
                 }
             )
         }
