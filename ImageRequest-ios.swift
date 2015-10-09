@@ -16,16 +16,20 @@ Alamofire.Request extension to support a handler for images. iOS Only
 */
 extension Request {
 
-    class func imageResponseSerializer() -> GenericResponseSerializer<UIImage> {
-        return GenericResponseSerializer { request, response, data in
-            if data == nil {
+    class func imageResponseSerializer() -> ResponseSerializer<UIImage, NSError> {
+        return ResponseSerializer { request, response, data, error in
+            guard error == nil else {return .Failure(error!)}
+            guard let validData = data else {
                 let failureReason = "String could not be serialized because input data was nil."
-                let error = Error.errorWithCode(.StringSerializationFailed, failureReason: failureReason)
-                return Result.Failure(nil, error)
+                let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
+                return .Failure(error)
             }
-
-            let image = UIImage(data: data!, scale: UIScreen.mainScreen().scale)
-            return Result.Success(image!)
+            guard let image = UIImage(data: validData, scale: UIScreen.mainScreen().scale) else {
+                let failureReason = "Data could not be serialized into an image."
+                let error = Error.errorWithCode(.DataSerializationFailed, failureReason: failureReason)
+                return .Failure(error)
+            }
+            return .Success(image)
         }
     }
 
@@ -36,12 +40,8 @@ extension Request {
     
     :returns: The request.
     */
-    public func responseImage(
-        completionHandler: (NSURLRequest?, NSHTTPURLResponse?, Result<UIImage>) -> Void)
-         -> Self
-    {
-        return response(responseSerializer: Request.imageResponseSerializer(),
-            completionHandler: completionHandler)
+    public func responseImage(completionHandler: Response<UIImage, NSError> -> Void) -> Self{
+        return response(responseSerializer: Request.imageResponseSerializer(), completionHandler: completionHandler)
     }
 }
 
@@ -59,30 +59,30 @@ extension UIImage {
     :returns: The request created or .None if was retrieved from the global `AlamoImage.imageCache` cache instance.
     */
     public static func requestImage(URLStringConv: URLStringConvertible,
-        success: (NSURLRequest?, NSHTTPURLResponse?, UIImage?) -> Void,
-        failure: (NSURLRequest?, NSHTTPURLResponse?, ErrorType?) -> Void = { (_, _, _) in }
+        success: (UIImage) -> Void,
+        failure: (NSError) -> Void = { (_) in }
         ) -> Request?
     {
         if let cachedImage = imageCache?.objectForKey(URLStringConv.URLString) as? UIImage {
-            success(nil, nil, cachedImage)
+            success(cachedImage)
             return .None
         } else {
             return Alamofire.request(.GET, URLStringConv).validate().responseImage()
                 {
-                    (req, response, result) in
-                    switch(result){
+                    (response: Response<UIImage, NSError>) in
+                    switch response.result{
                     case .Success(let image):
                         imageCache?.setObject(image, forKey: URLStringConv.URLString)
-                        success(req, response, image)
+                        success(image)
                         break
-                    case .Failure(_, let error):
-                        failure(req, response, error)
+                    case .Failure(let error):
+                        failure(error)
                         break
                     }
             }
         }
     }
-    
+
     /**
     Creates a request using `Alamofire`, and returns the image into the success closure. This method automatically adds and retrieves the image to/from the global `AlamoImage.imageCache` cache instance if any.
     
@@ -98,7 +98,7 @@ extension UIImage {
     public static func requestImage(URLStringConv: URLStringConvertible,
         success: (UIImage?) -> Void) -> Request?
     {
-        return requestImage(URLStringConv, success: { _,_,image in success(image)}, failure: {_,_,_ in})
+        return requestImage(URLStringConv, success: { image in success(image)}, failure: {_ in})
     }
 }
 

@@ -1,14 +1,13 @@
 PODS:
-  - Alamofire (2.0.0)
+  - Alamofire (3.0.0-beta.3)
   - AlamoImage (0.3.7):
     - AlamoImage/Core (= 0.3.7)
   - AlamoImage/Common (0.3.7):
-    - Alamofire (~> 2.0)
+    - Alamofire (~> 3.0.0-beta.3)
   - AlamoImage/Core (0.3.7):
     - AlamoImage/Common
 
 DEPENDENCIES:
-  - Alamofire (~> 2.0)
   - AlamoImage (from `../`)
 
 EXTERNAL SOURCES:
@@ -16,7 +15,7 @@ EXTERNAL SOURCES:
     :path: ../
 
 SPEC CHECKSUMS:
-  Alamofire: 2f13548b29d25a58ecd91c9225fb51493e2b782b
-  AlamoImage: 59c3b3bf5718a45599f68146d1003bddc5d8e0bb
+  Alamofire: c89149e58431f6f94527e8c01f920456afe39bd0
+  AlamoImage: 88d1b11c714d4ad4c22044f7f26f41e3b1f5b660
 
 COCOAPODS: 0.38.2
